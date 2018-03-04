@@ -1,0 +1,2 @@
+# GetNewsArticles
+python版SeleniumとPhantomJSで新聞記事を取得するプログラムです
