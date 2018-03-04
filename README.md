@@ -1,2 +1,3 @@
 # GetNewsArticles
-python版SeleniumとPhantomJSで新聞記事を取得するプログラムです
+python版Selenium（朝日と毎日）、
+PhantomJSとBeautifulSoup4で新聞記事を取得するプログラムです
