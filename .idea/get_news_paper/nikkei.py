@@ -14,6 +14,30 @@ homepath=os.path.expanduser('~')
 
 # Selenium settings
 driver = webdriver.PhantomJS(service_log_path=os.path.devnull)
+
+def timestamp(date):
+    dates=date.split(' ')
+    print(dates[0])
+    year = dates[0][0:4]
+    month=dates[0][5:dates[0].rfind('/')]
+    date=dates[0][dates[0].rfind('/')+1:len(dates[0])]
+
+    if len(month) ==1:
+        month='0'+month
+    if len(date) == 1:
+        date='0'+date
+
+    hour = dates[1][0:dates[1].find(':')]
+    minitus = dates[1][dates[1].find(':')+1:len(dates[1])]
+
+    if len(hour)==1:
+        hour='0'+hour
+    if len(minitus)==1:
+        minitus='0'+minitus
+
+    timestamp=year+'年'+month+'月'+date+'日'+hour+'時'+minitus+'分'
+    return timestamp
+
 def login(url,ID,PASSWORD):
     # get a HTML response
     driver.get(url)
@@ -48,6 +72,33 @@ def collect_articles(articles):
             break
     return urls
 
+def get_one_article(fw):
+    html = driver.page_source.encode('utf-8')  # more sophisticated methods may be available
+    soup = BeautifulSoup(html, "lxml")
+    title = soup.find("head").find("title").text.replace('　　：日本経済新聞','')
+    date = driver.find_element_by_class_name("cmnc-publish").text
+
+    date=timestamp(date)
+    print(date)
+    print(title)
+    fw.write('"'+title+'","'+date+'","')
+    tags=driver.find_elements_by_xpath("//dd[contains(@class,'cmnc-tag')]")
+    for i in range(len(tags)):
+        print(tags[i].text)
+        if i!=len(tags)-1:
+            fw.write(tags[i].text+',')
+        else:
+            fw.write(tags[i].text+'","')
+
+    texts = driver.find_elements_by_xpath("//div[@class='cmn-article_text a-cf JSID_key_fonttxt m-streamer_medium']/p")
+    for text in texts:
+        print(text.text)
+        fw.write(text.text.replace('\n',''))
+    fw.write('"\n')
+    #print(text.text)
+
+
+
 
 def get_text():
     driver.get('https://www.nikkei.com/economy/economic/')
@@ -57,39 +108,23 @@ def get_text():
     articles=driver.find_elements_by_xpath("//a[contains(@href,'article')]")
 
     urls =collect_articles(articles)
+    with open(homepath+'/_university/nikkei/data/nikkei/economic.csv','w') as fw:
+        fw.write('"title","date","tags","article"\n')
+        for url in urls:
+            driver.get(url)
+            get_one_article(fw)
 
-    driver.get(urls[1])
-    html = driver.page_source.encode('utf-8')  # more sophisticated methods may be available
-    soup = BeautifulSoup(html, "lxml")
-    title = soup.find("head").find("title").text
-    date = driver.find_element_by_class_name("cmnc-publish").text.replace(' ','@')
-    date_str_list=list(date)
-    print(date)
-    year=date[0:4]
-    month=date[5:date.rfind('/')]
-    date=date[date.rfind('/')+1:date.find('@')]
-    hour=date[date.find('@'):-1]
-    minitus=date[date.find(':')+1:-1]
-
-    print(year+month+date+hour+minitus)
-    print(hour)
-    print(minitus)
-
-    month_changed=False
-    for i in range(len(date_str_list)):
-        if date_str_list[i]=='/':
-            date_str_list[i]='月'
-            month_changed=True
-        elif date_str_list[i]=='/' and month_changed==True:
-            date_str_list[i]='日'
+        for i in range(1,int(size_articles/20)):
+            driver.get('https://www.nikkei.com/economy/economic/?bn='+str(i*20+1))
+            articles=driver.find_elements_by_xpath("//a[contains(@href,'article')]")
+            urls =collect_articles(articles)
+            for url in urls:
+                driver.get(url)
+                get_one_article(fw)
 
 
 
 
-    print(date_str_list)
-    print(title)
-
-    tags=driver.find_elements_by_xpath("//dd[contains(@class,'cmnc-tag')]")
 
 
 
